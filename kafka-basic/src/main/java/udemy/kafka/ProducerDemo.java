@@ -14,7 +14,7 @@ public class ProducerDemo {
     private static final Logger log = LoggerFactory.getLogger(ProducerDemo.class);
 
     public static void main(String[] args) {
-        log.info("Hello world!"); // slf4j simple: testImplementation -> implementation 으로 동작
+        log.info("Kafka Producer"); // slf4j simple: testImplementation -> implementation 으로 동작
 
         basicProducer();
     }
