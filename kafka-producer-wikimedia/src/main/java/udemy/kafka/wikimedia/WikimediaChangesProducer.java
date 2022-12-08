@@ -1,8 +1,47 @@
 package udemy.kafka.wikimedia;
 
+import com.launchdarkly.eventsource.EventHandler;
+import com.launchdarkly.eventsource.EventSource;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
+
+import java.net.URI;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
 public class WikimediaChangesProducer {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
+
+        String bootstrapServers = "127.0.0.1:9092";
+
+        //create Producer Properties
+        Properties properties = new Properties();
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+
+        //create the Producer
+        KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
+
+        String topic = "wikimedia.recentchange";
+
+        //event handler : 스트림에서 오는 이벤트 처리 후 프로듀서에 보냄
+        EventHandler eventHandler = new WikimediaChangesHandler(producer, topic);
+        String url = "https://stream.wikimedia.org/v2/stream/recentchange";
+        EventSource eventSource = new EventSource.Builder(eventHandler, URI.create(url)).build();
+
+        //start the producer in another thread
+        eventSource.start();
+
+
+        //흐름을 중지해야 메인 스레드가 멈추지 않음
+        //we produce for 10 minutes and block the program until then
+        TimeUnit.MINUTES.sleep(10);
 
     }
+
 }
+
