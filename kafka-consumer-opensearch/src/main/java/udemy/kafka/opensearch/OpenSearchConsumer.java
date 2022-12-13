@@ -1,5 +1,6 @@
 package udemy.kafka.opensearch;
 
+import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -81,6 +82,16 @@ public class OpenSearchConsumer {
     }
 
 
+    private static String extractId(String json) {
+        // gson library
+        return JsonParser.parseString(json)
+                .getAsJsonObject()
+                .get("meta")
+                .getAsJsonObject()
+                .get("id")
+                .getAsString();
+    }
+
     public static void main(String[] args) throws IOException {
 
         Logger log = LoggerFactory.getLogger(OpenSearchConsumer.class.getSimpleName());
@@ -118,9 +129,17 @@ public class OpenSearchConsumer {
 
                 // send the record into OpenSearch
                 for (ConsumerRecord<String, String> record: records) {
+
+                    // idempotent strategy 1 - define an ID using Kafka Record coordinates
+                    // String id = record.topic() + "_" + record.partition() + "_" + record.offset();
+
                     try {
+                        // idempotent strategy 2 (recommend) - extract the ID from the JSON value
+                        String id = extractId(record.value());
+
                         IndexRequest indexRequest = new IndexRequest("wikimedia") // 인덱스 이름
-                                .source(record.value(), XContentType.JSON); // 타입
+                                .source(record.value(), XContentType.JSON) // 타입
+                                .id(id); // id (idempotence)
 
                         IndexResponse response = openSearchClient.index(indexRequest, RequestOptions.DEFAULT);
 
@@ -137,5 +156,4 @@ public class OpenSearchConsumer {
 
         // 4. close
     }
-
 }
