@@ -1,3 +1,6 @@
 rootProject.name = 'kafka-beginner-v3'
 include 'kafka-basic'
+include 'kafka-producer-wikimedia'
+include 'kafka-consumer-opensearch'
+include 'kafka-streams-wikimedia'
 
